@@ -32,7 +32,7 @@ jobs:
     # Step 4: Run tests
     - name: Run tests
       run: |
-        pytest test/
+        pytest
 
     # Step 5: Log in to Docker Hub
     - name: Log in to Docker Hub
