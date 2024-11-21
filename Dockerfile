@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 5000
 
 # Command to run the app
-CMD ["python", "app/app.py"]  # Update to your app's entry point
+CMD ["python", "app.py"]  # Update to your app's entry point
