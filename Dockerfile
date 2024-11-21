@@ -2,7 +2,7 @@
 FROM python:3.11.5
 
 # Set the working directory
-WORKDIR app
+WORKDIR /app
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 5000
 
 # Command to run the app
-CMD ["python", "app.py"]  # Update to your app's entry point
+CMD ["python", "app/app.py"]  # Update to your app's entry point
