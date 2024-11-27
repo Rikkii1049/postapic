@@ -12,7 +12,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'images')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
 db = SQLAlchemy(app)
-DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1306892506063179807/VuQlEflMglRaw2grRaOGMXYOwdqoJKmeh_Fhj_RYCAENj7zHF6EJIBbqRzLijPej5FVd"
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1311322552014213212/0hc4qDm5Ym-9VrjkvMefY34XvD5k_92KlVrTD1yJJQxCJ9stgqcDTnXfp8vtmcMww7kG"
+LOGS_DIR = "logs/"
+
+if not os.path.exists(LOGS_DIR):
+    os.makedirs("logs")
 
 # Get WIB time used for logging
 def get_wib_time():
@@ -102,7 +106,7 @@ def login():
             db.session.add(user_session)
             db.session.commit()
             session['user_id'] = user.id
-            session['session_id'] = user_session.id
+            session['session_id'] = user_session.id_session
             login_success = f"User {username} Has Successfully Logged In!"
             process_log(login_success)
             return redirect(url_for('userdashboard', username=username))
@@ -167,7 +171,7 @@ def logout():
     session_id = session.get('session_id')
     if session_id:
         # Log end session to database
-        user_session_end = UserSession.query.get(session_id)
+        user_session_end = UserSession.query.get_or_404(session_id)
         user_session_end.logout_time = get_wib_time()
         db.session.commit()
         
@@ -175,6 +179,8 @@ def logout():
         getuser = User.query.get_or_404(session['user_id'])
         logout_msg = f"User {getuser.username} Has Logged Out!"
         process_log(logout_msg)
+        log_file_output(session_id)
+        
         session.clear()
         return redirect(url_for('index'))
     return redirect(url_for('userdashboard', username=getuser.username))
@@ -221,12 +227,38 @@ def process_log(message):
     db.session.commit()
     newest_log = Logs.query.filter_by(id_session=session['session_id']).first()
     
-    payload = {
+    logmsg = {
         "content": f"[**{newest_log.time}**]: {message}",
     }
-    response = requests.post(DISCORD_WEBHOOK, json=payload)
+    response = requests.post(DISCORD_WEBHOOK, json=logmsg)
     if response.status_code != 204:
         print(f"Failed to send message to Discord: {response.status_code} {response.text}")
+
+# Ouput log file and then send it to discord
+def log_file_output(session_id) :
+    getalllogs = Logs.query.filter_by(id_session=session_id).all()
+    get_user = User.query.get_or_404(session["user_id"])
+    getsession = UserSession.query.get_or_404(session_id)
+    formatted_date = get_wib_time().strftime('%H-%M-%S_%d-%m-%Y')
+    log_filename = os.path.join(LOGS_DIR, f"{get_user.username}_{formatted_date}.log")
+    print(log_filename)
+    # make log file
+    with open(log_filename, 'w') as f:
+        f.write(f"User : {get_user.username}\n")
+        f.write(f"Log timestamp : {getsession.login_time}\n")
+        for row in getalllogs:
+            f.write(f"{row.time} : {row.log_message}\n")
+        f.write("\n")
+    
+    # send log file to discord
+    with open(log_filename, 'rb') as f:
+        response = requests.post(
+            DISCORD_WEBHOOK,
+            files={'file': (log_filename, f)},
+            data={'content': 'User session log file'}
+        )
+        if response.status_code == 204:
+            print(f"Failed to send message to Discord: {response.status_code} {response.text}")
 
 if __name__ == '__main__':
     db.create_all
