@@ -51,9 +51,9 @@ jobs:
       run: |
         docker push ${{ secrets.DOCKER_USERNAME }}/postapic:latest
 
-    # Uploads the articaft
-      - name: Upload test logs
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-logs
-          path: result.log
+    # Step 8: Uploads the articaft
+    - name: Upload test logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-logs
+        path: result.log
