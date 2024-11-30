@@ -67,3 +67,5 @@ jobs:
         git add testresult.log
         git commit -m "Add test logs as an artifact"
         git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Automatically provided token
